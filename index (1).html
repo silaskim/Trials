@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OmegaEats</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9f9f8; color: #111; min-height: 100vh; }
+
+.nav { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 10; }
+.logo { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.logo-dot { width: 10px; height: 10px; background: #F97316; border-radius: 50%; }
+.nav-tabs { display: flex; gap: 4px; }
+.tab-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid #e5e5e5; background: transparent; font-size: 13px; cursor: pointer; color: #666; transition: all 0.15s; font-family: inherit; }
+.tab-btn.active { background: #F97316; color: #fff; border-color: #F97316; font-weight: 500; }
+
+.app { max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
+.view { display: none; }
+.view.active { display: block; }
+
+.toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #111; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 100; white-space: nowrap; }
+.toast.show { opacity: 1; }
+
+.breadcrumb { display: flex; align-items: center; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.bc-item { font-size: 13px; color: #999; cursor: pointer; }
+.bc-item:hover { color: #F97316; }
+.bc-item.active { color: #111; font-weight: 500; cursor: default; }
+.bc-sep { font-size: 12px; color: #ccc; }
+
+.section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #999; margin-bottom: 12px; }
+
+.pick-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+.pick-card { padding: 20px 16px; border-radius: 12px; border: 1.5px solid #e5e5e5; background: #fff; cursor: pointer; transition: all 0.15s; }
+.pick-card:hover { border-color: #fdba74; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(249,115,22,0.1); }
+.pick-card .icon { font-size: 28px; margin-bottom: 10px; }
+.pick-card .name { font-size: 16px; font-weight: 600; color: #111; }
+.pick-card .sub { font-size: 12px; color: #999; margin-top: 4px; }
+
+.loc-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 1.5rem; }
+.loc-card { padding: 14px 16px; border-radius: 12px; border: 1.5px solid #e5e5e5; background: #fff; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between; }
+.loc-card:hover { border-color: #fdba74; }
+.loc-name { font-size: 15px; font-weight: 600; color: #111; }
+.loc-sub { font-size: 12px; color: #999; margin-top: 2px; }
+.arrow { color: #ccc; font-size: 18px; }
+
+.section-tabs { display: flex; gap: 8px; margin-bottom: 0; flex-wrap: wrap; position: sticky; top: 60px; z-index: 9; background: #f9f9f8; padding: 10px 0; border-bottom: 1px solid #e5e5e5; }
+.sec-tab { padding: 5px 13px; border-radius: 20px; border: 1px solid #e5e5e5; background: #fff; font-size: 12px; cursor: pointer; color: #666; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+.sec-tab.active { background: #111; color: #fff; border-color: #111; }
+.menu-section-header { font-size: 17px; font-weight: 700; color: #111; margin: 1.5rem 0 0.75rem; padding-top: 0.5rem; }
+
+.menu-item { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.menu-item:hover { border-color: #F97316; box-shadow: 0 2px 10px rgba(249,115,22,0.08); }
+.mi-name { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 3px; }
+.mi-desc { font-size: 12px; color: #888; line-height: 1.5; }
+.mi-add { width: 30px; height: 30px; border-radius: 50%; background: #F97316; color: #fff; border: none; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 1; padding-bottom: 1px; }
+
+.modal-overlay { background: rgba(0,0,0,0.45); border-radius: 14px; overflow-y: auto; max-height: 80vh; display: flex; align-items: flex-end; }
+.modal-box { background: #fff; border-radius: 16px 16px 0 0; padding: 1.5rem; width: 100%; max-height: 78vh; overflow-y: auto; }
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.modal-desc { font-size: 13px; color: #888; margin-bottom: 1.25rem; line-height: 1.5; }
+.modal-section { margin-bottom: 1.25rem; }
+.modal-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #999; margin-bottom: 8px; }
+.opt-row { display: flex; align-items: center; padding: 9px 12px; border-radius: 8px; border: 1px solid #e5e5e5; margin-bottom: 6px; cursor: pointer; transition: all 0.12s; gap: 10px; }
+.opt-row:hover { border-color: #F97316; background: #fff7ed; }
+.opt-row.selected { border-color: #F97316; background: #fff7ed; }
+.opt-row input { accent-color: #F97316; width: 16px; height: 16px; flex-shrink: 0; }
+.opt-label { font-size: 14px; color: #111; flex: 1; }
+.qty-ctrl { display: flex; align-items: center; gap: 14px; margin-bottom: 1.25rem; }
+.qty-label { font-size: 13px; color: #999; }
+.qty-btn { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #e5e5e5; background: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; font-family: inherit; }
+.qty-btn:hover { border-color: #F97316; color: #F97316; }
+.qty-num { font-size: 17px; font-weight: 600; min-width: 24px; text-align: center; }
+.modal-notes { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #e5e5e5; font-size: 14px; font-family: inherit; resize: none; min-height: 60px; margin-bottom: 1.25rem; background: #fafafa; }
+.modal-notes:focus { outline: none; border-color: #F97316; background: #fff; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-cancel { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #e5e5e5; background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.modal-add-btn { flex: 2; padding: 12px; border-radius: 10px; background: #F97316; color: #fff; border: none; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.modal-add-btn:hover { opacity: 0.9; }
+
+.cart-bar { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.cart-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
+.cart-item:last-child { border-bottom: none; }
+.ci-name { font-size: 14px; font-weight: 600; }
+.ci-detail { font-size: 12px; color: #888; margin-top: 2px; }
+.ci-remove { color: #ccc; background: none; border: none; font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+.ci-remove:hover { color: #dc2626; background: #fee2e2; }
+.submit-btn { width: 100%; padding: 13px; background: #F97316; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+.submit-btn:hover { opacity: 0.9; }
+.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.card { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; }
+
+.name-wrap { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+.name-wrap input { flex: 1; padding: 11px 14px; border-radius: 10px; border: 1px solid #e5e5e5; font-size: 15px; font-family: inherit; background: #fafafa; }
+.name-wrap input:focus { outline: none; border-color: #F97316; background: #fff; }
+.name-wrap button { padding: 11px 20px; background: #F97316; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+.stat-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px 16px; }
+.stat-num { font-size: 26px; font-weight: 600; }
+.stat-label { font-size: 12px; color: #999; margin-top: 2px; }
+.filter-row { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; }
+.filter-chip { padding: 5px 14px; border-radius: 16px; border: 1px solid #e5e5e5; background: #fff; font-size: 12px; cursor: pointer; color: #666; font-family: inherit; transition: all 0.15s; }
+.filter-chip.active { background: #111; color: #fff; border-color: #111; font-weight: 500; }
+.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge.pending { background: #fff7ed; color: #c2410c; }
+.badge.claimed { background: #eff6ff; color: #1d4ed8; }
+.badge.done { background: #f0fdf4; color: #166534; }
+.order-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 10px; }
+.order-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.order-name { font-size: 15px; font-weight: 600; }
+.order-meta { font-size: 12px; color: #999; margin-top: 2px; }
+.pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.pill { background: #f3f4f6; border-radius: 6px; padding: 3px 9px; font-size: 12px; color: #333; }
+.order-actions { display: flex; gap: 8px; align-items: center; }
+.action-btn { padding: 6px 14px; border-radius: 8px; border: 1px solid #e5e5e5; font-size: 12px; font-weight: 500; cursor: pointer; background: #fff; color: #555; font-family: inherit; transition: all 0.12s; }
+.action-btn.orange { background: #F97316; color: #fff; border-color: #F97316; }
+.action-btn.green { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+.empty { text-align: center; padding: 3rem 1rem; color: #bbb; font-size: 14px; }
+
+.gate { position: fixed; inset: 0; background: #fff; z-index: 200; display: flex; align-items: center; justify-content: center; }
+.gate-box { width: 100%; max-width: 340px; padding: 2rem; }
+.gate-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+.gate-sub { font-size: 14px; color: #888; margin-bottom: 1.5rem; }
+.gate-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; border: none; margin-bottom: 10px; transition: opacity 0.15s; }
+.gate-btn.brother { background: #F97316; color: #fff; }
+.gate-btn.pledge { background: #111; color: #fff; }
+.gate-btn:hover { opacity: 0.88; }
+.pw-form { display: none; margin-top: 1rem; }
+.pw-form input { width: 100%; padding: 10px 12px; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 14px; font-family: inherit; margin-bottom: 8px; }
+.pw-err { font-size: 12px; color: #dc2626; display: none; margin-top: 4px; }
+</style>
+<script>
+// Stub - will be replaced by full definition when main script loads
+window.enterAs = function(role) {
+  document.getElementById('gate').style.display = 'none';
+  if (window._realEnterAs) window._realEnterAs(role);
+  else window._pendingEnterRole = role;
+};
+window.checkPw = function() {
+  var val = document.getElementById('pw-input').value;
+  if (val === 'nodrop') window.enterAs('pledge');
+  else { document.getElementById('pw-err').style.display='block'; document.getElementById('pw-input').value=''; }
+};
+</script>
+</head>
+<body>
+
+
+
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <div style="font-size:30px;margin-bottom:12px;">🍔</div>
+    <div class="gate-title">OmegaEats</div>
+    <div class="gate-sub">Who are you?</div>
+    <button class="gate-btn brother" onclick="window.enterAs('brother')">I'm a Brother</button>
+    <button class="gate-btn pledge" onclick="document.getElementById('pw-form').style.display='block';document.getElementById('pw-input').focus()">I'm a Pledge</button>
+    <div class="pw-form" id="pw-form">
+      <input type="password" id="pw-input" placeholder="Pledge password" onkeydown="if(event.key==='Enter')window.checkPw()" />
+      <button class="gate-btn pledge" style="margin-top:4px;" onclick="window.checkPw()">Enter</button>
+      <div class="pw-err" id="pw-err">Wrong password.</div>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="logo"><div class="logo-dot"></div> OmegaEats</div>
+  <div class="nav-tabs" id="nav-tabs">
+    <button class="tab-btn active" onclick="switchView('order',this)">Order Food</button>
+    <button class="tab-btn" onclick="switchView('history',this)">Order History</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <div class="view active" id="view-order">
+    <div class="breadcrumb" id="breadcrumb"></div>
+
+    <div id="step-name">
+      <div class="section-label">What's your name?</div>
+      <div class="name-wrap">
+        <input type="text" id="brother-name" placeholder="e.g. Jake" onkeydown="if(event.key==='Enter')document.getElementById('brother-phone').focus()" />
+      </div>
+      <div class="section-label" style="margin-top:1rem;">Phone number</div>
+      <div class="name-wrap">
+        <input type="tel" id="brother-phone" placeholder="e.g. 917-555-0123" onkeydown="if(event.key==='Enter')goToStep1()" />
+        <button onclick="goToStep1()">Start Order →</button>
+      </div>
+    </div>
+
+    <div id="step-category" style="display:none;">
+      <div class="section-label">Choose a category</div>
+      <div class="pick-grid">
+        <div class="pick-card" onclick="selectCategory('dining')">
+          <div class="icon">🏛️</div>
+          <div class="name">Dining Hall</div>
+          <div class="sub">Crave, Upstein, True Burger</div>
+        </div>
+        <div class="pick-card" onclick="selectCategory('cafe')">
+          <div class="icon">☕</div>
+          <div class="name">Café</div>
+          <div class="sub">Starbucks, Peet's Coffee</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="step-location" style="display:none;">
+      <div class="section-label">Choose a location</div>
+      <div class="loc-grid" id="loc-grid"></div>
+    </div>
+
+    <div id="step-menu" style="display:none;">
+      <div class="section-tabs" id="section-tabs"></div>
+      <div id="menu-items-list"></div>
+    </div>
+
+    <div id="step-customize" style="display:none;">
+      <div class="modal-overlay">
+        <div class="modal-box" id="modal-box"></div>
+      </div>
+    </div>
+
+    <div id="step-cart" style="display:none;">
+      <div class="section-label">Your order</div>
+      <div class="cart-bar" id="cart-display"></div>
+      <div style="margin-bottom:1.25rem;">
+        <button style="background:none;border:none;color:#F97316;font-size:13px;cursor:pointer;font-family:inherit;padding:0;" onclick="goToMenu()">+ Add more items</button>
+      </div>
+      <div class="card">
+        <div class="section-label" style="margin-bottom:10px;">Assign to pledge(s)</div>
+        <div id="pledge-selector" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem;">
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;" id="pl-any">
+            <input type="checkbox" value="Any Pledge" onchange="togglePledge(this)" style="accent-color:#F97316;" checked /> Any Pledge
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;">
+            <input type="checkbox" value="Niket Barot" onchange="togglePledge(this)" style="accent-color:#F97316;" /> Niket Barot
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;">
+            <input type="checkbox" value="Alexander Genkov" onchange="togglePledge(this)" style="accent-color:#F97316;" /> Alexander Genkov
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;">
+            <input type="checkbox" value="Clayton Green" onchange="togglePledge(this)" style="accent-color:#F97316;" /> Clayton Green
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;">
+            <input type="checkbox" value="Silas Kim" onchange="togglePledge(this)" style="accent-color:#F97316;" /> Silas Kim
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;">
+            <input type="checkbox" value="Ayush Patel" onchange="togglePledge(this)" style="accent-color:#F97316;" /> Ayush Patel
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;">
+            <input type="checkbox" value="Chris Patel" onchange="togglePledge(this)" style="accent-color:#F97316;" /> Chris Patel
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;">
+            <input type="checkbox" value="Jai Wadhwani" onchange="togglePledge(this)" style="accent-color:#F97316;" /> Jai Wadhwani
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;">
+            <input type="checkbox" value="Tina Wang" onchange="togglePledge(this)" style="accent-color:#F97316;" /> Tina Wang
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid #e5e5e5;font-size:13px;cursor:pointer;background:#fff;">
+            <input type="checkbox" value="Thomas Yu" onchange="togglePledge(this)" style="accent-color:#F97316;" /> Thomas Yu
+          </label>
+        </div>
+        <div class="section-label" style="margin-bottom:10px;">Pickup time</div>
+        <select id="pickup-time" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #e5e5e5;font-size:14px;font-family:inherit;background:#fafafa;margin-bottom:1.25rem;">
+          <option>ASAP</option><option>In 30 min</option><option>In 1 hour</option><option>Tonight (dinner)</option>
+        </select>
+        <div class="section-label" style="margin-bottom:10px;">Notes for the pledge (optional)</div>
+        <textarea id="order-notes" class="modal-notes" style="margin-bottom:0;" placeholder="e.g. Extra napkins, no onions on everything"></textarea>
+      </div>
+      <button class="submit-btn" id="submit-btn" onclick="submitOrder()">Place Order</button>
+    </div>
+  </div>
+
+  <div class="view" id="view-history">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="s-pending">—</div><div class="stat-label">Pending</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-claimed">—</div><div class="stat-label">In progress</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-done">—</div><div class="stat-label">Completed</div></div>
+    </div>
+    <div class="filter-row">
+      <button class="filter-chip active" onclick="filterOrders('all',this)">All</button>
+      <button class="filter-chip" onclick="filterOrders('pending',this)">Pending</button>
+      <button class="filter-chip" onclick="filterOrders('claimed',this)">In Progress</button>
+      <button class="filter-chip" onclick="filterOrders('done',this)">Done</button>
+    </div>
+    <div id="orders-list"><div class="empty">Loading orders...</div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const IMGS = {};
+
+const MENUS = {
+  "Crave NYU": {
+    sections: {
+      "J's Kitchen": [
+        { name:"Teriyaki Bowl", desc:"Seasoned Rice with Furikake Seasoning, choice of Protein, Topped with Wasabi Citrus Slaw.", opts:{"Protein":{t:"radio",o:["Fire Roasted Pork","Fire Roasted Chicken","No Protein"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Katsu Bowl", desc:"Seasoned Rice, Furikake Seasoning, Wasabi Citrus Slaw, Edamame, Broccoli, Katsu Sauce.", opts:{"Protein":{t:"radio",o:["Fire Roasted Pork","Fire Roasted Chicken","No Protein"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Roasted Mushroom Curry Bowl", desc:"Seasoned Rice, Furikake Seasoning, Roasted Mushrooms, Wasabi Citrus Slaw, Roasted Broccoli.", opts:{"Protein":{t:"radio",o:["Fire Roasted Pork","Fire Roasted Chicken","No Protein"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "Darn Good Bowls": [
+        { name:"Caesar Salad", desc:"Crisp Romaine, Shaved Parmesan, Croutons, Classic Caesar Dressing.", opts:{"Add Chicken?":{t:"radio",o:["No thanks","Yes, add grilled chicken"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Buffalo Chicken Salad", desc:"Grilled Chicken, Buffalo Sauce, Pickled Carrots, Jack Cheese, Croutons on Romaine.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Buffalo Cauliflower Salad", desc:"Air Fried Buffalo Cauliflower, Pickled Carrots, Jack Cheese, Croutons on Romaine.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"BYO Bowl", desc:"Choose base, protein, toppings, garnish and dressing.", opts:{"Base":{t:"radio",o:["Romaine","Mixed Greens","Seasoned Rice","Cauliflower Rice"]},"Protein":{t:"radio",o:["Grilled Chicken","Crispy Chicken","Roasted Tofu","Salmon","No Protein"]},"Dressing":{t:"radio",o:["Ranch","Caesar","Balsamic Vinaigrette","Honey Mustard","Green Goddess"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "BONMi": [
+        { name:"High Five Rice & Coconut Quinoa Bowl", desc:"Coconut Quinoa Rice, Roasted Pork, Cucumber, Pickled Carrot, Pickled Onion, Boom Boom Sauce.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"BBQ Belly Banh Mi Sandwich", desc:"Shredded Pork, Cucumbers, Chili Lime Slaw, Boom Boom Sauce, Korean BBQ Sauce on a crispy baguette.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Build Your Own Banh Mi Sandwich", desc:"Build your own Banh Mi on a crispy baguette.", opts:{"Protein":{t:"radio",o:["Roasted Pork","Grilled Chicken","Tofu"]},"Toppings":{t:"checkbox",o:["Cucumbers","Pickled Carrots","Pickled Onion","Chili Lime Slaw","Jalapeños","Cilantro"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Build Your Own Bowl", desc:"Choose your base and build your own bowl.", opts:{"Base":{t:"radio",o:["Coconut Quinoa Rice","Mixed Greens","Brown Rice"]},"Protein":{t:"radio",o:["Roasted Pork","Grilled Chicken","Tofu"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "Veg 23": [
+        { name:"Buffalo Cauliflower Bowl", desc:"Buffalo Cauliflower over choice of base with Cucumber, Tangy Slaw, Smashed Avocado and Ranch.", opts:{"Base":{t:"radio",o:["Seasoned Rice","Mixed Greens","Cauliflower Rice"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Southwest Bowl (VG)", desc:"Plantains & Roasted Sweet Potatoes over choice of base with Cucumber, Cabbage, Smashed Avocado.", opts:{"Base":{t:"radio",o:["Seasoned Rice","Mixed Greens","Cauliflower Rice"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Falafel Sandwich (VG)", desc:"Falafel on a toasted Baguette with Hummus, Mixed Greens, Cucumber, Sunburst Tomatoes, Chimichurri.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Elote Fritter Bowl", desc:"Elote Corn Fritters over choice of base with Cucumber, Pickled Red Onions, Tangy Slaw & Tomatillo Sauce.", opts:{"Base":{t:"radio",o:["Seasoned Rice","Mixed Greens","Cauliflower Rice"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Edgy Veggie Rice Bowl", desc:"Choice of Protein over Seasoned Rice with Sunburst Tomatoes, Edamame, Roasted Veggies.", opts:{"Protein":{t:"radio",o:["Crispy Tofu","Roasted Mushrooms","Beyond Chicken"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Build Your Own Veg 23 Bowl", desc:"Build your own vegan/vegetarian bowl.", opts:{"Base":{t:"radio",o:["Seasoned Rice","Mixed Greens","Cauliflower Rice"]},"Protein":{t:"radio",o:["Crispy Tofu","Roasted Mushrooms","Falafel","Elote Fritters"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "Eso Latin": [
+        { name:"Keto Burrito Bowl", desc:"Cauliflower Rice, Roasted Mushrooms, Smashed Avocado, choice of Protein, Feta Cheese, Sunburst Tomatoes.", opts:{"Protein":{t:"radio",o:["Shredded Chicken","Seasoned Ground Beef","Pork Carnitas","Vegan Chorizo"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Chipotle BBQ Sweet Potato Bowl (VG)", desc:"Seasoned Rice, Maple Sweet Potatoes, Cabbage, Fire Roasted Veggies, Smashed Avocado, Black Beans.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"BYO Eso Bowl", desc:"Create your own Eso Latin Bowl.", opts:{"Base":{t:"radio",o:["Seasoned White Rice","Cauliflower Rice","Mixed Greens"]},"Protein":{t:"radio",o:["Shredded Chicken","Seasoned Ground Beef","Pork Carnitas","Vegan Chorizo"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "True Burger Entrees": [
+        { name:"All Beef Hot Dog", desc:"All Beef Hot Dog on a toasted potato bun.", opts:{"Toppings":{t:"checkbox",o:["Ketchup","Mustard","Relish","Onions","Sauerkraut"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Crispy Chicken Tenders", desc:"3 piece Chicken Tenders.", opts:{"Sauce":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Boom Boom Sauce"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Crispy Chicken Sandwich", desc:"Toasted Brioche Bun, two crispy Chicken Tenders, American Cheese, Lettuce, Tomato.", opts:{"Modifications":{t:"checkbox",o:["No Lettuce","No Tomato","Add Bacon","Add Avocado","Extra Sauce"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Hot Honey Sandwich", desc:"Crispy chicken tenders in Hot Honey Sauce, Tangy Coleslaw, and Pickles on a Toasted Bun.", opts:{"Modifications":{t:"checkbox",o:["No Pickles","No Coleslaw","Extra Hot Honey"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Classic Americana Burger", desc:"Toasted Brioche Bun, All Beef Patty, Caramelized Onion, American Cheese, Lettuce, Tomato.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Modifications":{t:"checkbox",o:["No Onion","No Lettuce","No Tomato","Add Bacon","Add Egg"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"California Burger", desc:"Toasted Brioche Bun, All Beef Patty, Smashed Avocado, Bacon, Caramelized Onion.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Breakfast Burger", desc:"Toasted Brioche Bun, All Beef Patty, Fried Egg, Bacon, Caramelized Onion, American Cheese.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Mac and Cheese Burger", desc:"Toasted Brioche Bun, All Beef Patty, Mac and Cheese, Caramelized Onion, American Cheese.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Ghost Burger", desc:"All Beef Patty, Provolone, Bacon, Dill Pickle, Barbeque Sauce, Jalapeños.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Modifications":{t:"checkbox",o:["No Jalapeños","No Pickles","Extra Bacon"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "True Burger Breakfast": [
+        { name:"Spicy Sunrise Sandwich", desc:"Fried Egg, Pepper Jack Cheese, Bacon, Boom Boom Sauce and Spicy Sriracha Sauce on a Toasted Bagel.", opts:{"Modifications":{t:"checkbox",o:["No Bacon","Extra Egg","Extra Bacon"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Create Your Own Breakfast Sandwich", desc:"Build your own breakfast sandwich.", opts:{"Bread":{t:"radio",o:["Bagel","Brioche Bun","English Muffin","Croissant"]},"Protein":{t:"checkbox",o:["Bacon","Sausage","Ham"]},"Cheese":{t:"radio",o:["American","Pepper Jack","Swiss","Cheddar"]},"Egg Style":{t:"radio",o:["Fried","Scrambled","Over Easy"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "Ciao Bella": [
+        { name:"Create Your Own Pasta Bowl", desc:"Create your own Pasta Bowl served with a Garlic Bread Stick.", opts:{"Pasta":{t:"radio",o:["Penne","Spaghetti","Rigatoni","Fusilli"]},"Sauce":{t:"radio",o:["Marinara","Alfredo","Pesto","Arrabbiata"]},"Protein":{t:"radio",o:["Grilled Chicken","Meatballs","Roasted Veggies","No Protein"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ]
+    }
+  },
+  "Upstein": {
+    sections: {
+      "CluckStein": [
+        { name:"Nashville Hot Honey Chicken Sandwich w/ Spiral Fries", desc:"Signature Breaded Chicken Tenders in Nashville Hot Honey Sauce on a Martin's Potato Bun, w/ Pickles, Spiral Fries, Side & Drink.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Signature Breaded Wings & Spiral Fries", desc:"5 Chicken Wings in Seasoned Flour and Panko. 2 Sauces, Spiral Fries, Side & Drink.", opts:{"Sauce 1":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Sauce 2":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Signature Breaded Chicken Tenders & Spiral Fries", desc:"3 Signature Breaded Chicken Tenders, 2 Sauces, Spiral Fries, Side & Drink.", opts:{"Sauce 1":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Sauce 2":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Signature Breaded Chicken Tender Sandwich & Spiral Fries", desc:"Signature Breaded Chicken Tenders on Martin's Potato Bun, Spiral Fries, Side & Drink.", opts:{"Sauce":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Grilled Chicken Tenders & Spiral Fries", desc:"3 Grilled Chicken Tenders, 2 Sauces, Spiral Fries, Side & Drink.", opts:{"Sauce 1":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Sauce 2":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Grilled Chicken Tender Sandwich & Spiral Fries", desc:"Grilled Chicken Tender Sandwich, 2 Sauces, Spiral Fries, Side & Drink.", opts:{"Sauce 1":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Sauce 2":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Beyond Vegan Tenders & Spiral Fries (VG)", desc:"3 Beyond Vegan Chicken Tenders, 2 Sauces, Spiral Fries, Side & Drink.", opts:{"Sauce 1":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Sauce 2":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Beyond Vegan Tender Sandwich & Spiral Fries (VG)", desc:"Beyond Vegan Tender Sandwich on a Vegan Pretzel Bun, Spiral Fries, Side & Drink.", opts:{"Sauce":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Hot Honey"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Signature Garden Salad (VG)", desc:"Baby Greens, Shredded Carrots, English Cucumbers, Grape Tomatoes, Red Onion, choice of Protein & Dressing.", opts:{"Protein":{t:"radio",o:["Grilled Chicken","Crispy Chicken","No Protein"]},"Dressing":{t:"radio",o:["Ranch","Caesar","Balsamic Vinaigrette","Honey Mustard"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "Taqueria": [
+        { name:"3 Tacos", desc:"Choice of flour, soft corn, or hard shell tacos, filled with chicken, beef, pork, or vegan chorizo.", opts:{"Shell":{t:"radio",o:["Flour","Soft Corn","Hard Shell"]},"Protein":{t:"radio",o:["Shredded Chicken","Seasoned Ground Beef","Pork Carnitas","Vegan Chorizo"]},"Toppings":{t:"checkbox",o:["Lettuce","Tomato","Cheese","Sour Cream","Guacamole","Salsa","Jalapeños","Cilantro"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Bowl", desc:"Cilantro Brown Rice or Seasoned White Rice with chicken, beef, pork, or vegan chorizo.", opts:{"Base":{t:"radio",o:["Cilantro Brown Rice","Seasoned White Rice"]},"Protein":{t:"radio",o:["Shredded Chicken","Seasoned Ground Beef","Pork Carnitas","Vegan Chorizo"]},"Toppings":{t:"checkbox",o:["Black Beans","Corn","Cheese","Sour Cream","Guacamole","Salsa","Jalapeños","Cilantro"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Loaded Tater Tots", desc:"Golden fried tater tots topped with your choice of Taqueria toppings.", opts:{"Toppings":{t:"checkbox",o:["Cheese","Black Beans","Corn","Pico de Gallo","Sour Cream","Guacamole","Jalapeños"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Loaded Mac & Cheese", desc:"Creamy Mac & Cheese with your choice of Taqueria toppings.", opts:{"Protein":{t:"radio",o:["Shredded Chicken","Seasoned Ground Beef","Pork Carnitas","Vegan Chorizo","No Protein"]},"Toppings":{t:"checkbox",o:["Corn","Black Beans","Pico de Gallo","Jalapeños","Cilantro"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Build Your Own Classic Burrito", desc:"12\" Flour Tortilla filled with Rice and choice of protein.", opts:{"Protein":{t:"radio",o:["Shredded Chicken","Seasoned Ground Beef","Pork Carnitas","Vegan Chorizo"]},"Toppings":{t:"checkbox",o:["Black Beans","Corn","Cheese","Sour Cream","Guacamole","Salsa","Jalapeños","Cilantro","Pico de Gallo"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Classic Quesadilla", desc:"12\" Flour Tortilla with choice of protein.", opts:{"Protein":{t:"radio",o:["Shredded Chicken","Seasoned Ground Beef","Pork Carnitas","Vegan Chorizo"]},"Extras":{t:"checkbox",o:["Add Guacamole","Add Sour Cream","Add Jalapeños","Add Salsa"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ]
+    }
+  },
+  "True Burger at UHall": {
+    sections: {
+      "True Burger Entrees": [
+        { name:"Nathan's All Beef Hot Dog", desc:"All Beef Hot Dog served with Fries.", opts:{"Toppings":{t:"checkbox",o:["Ketchup","Mustard","Relish","Onions","Sauerkraut"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Crispy Chicken Tenders", desc:"3 piece Chicken Tenders.", opts:{"Sauce":{t:"radio",o:["Buffalo","Honey Mustard","Ranch","BBQ","Boom Boom Sauce"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Crispy Chicken Sandwich", desc:"Toasted Brioche Bun, two crispy Chicken Tenders, Caramelized Onion, American Cheese, Lettuce, Tomato.", opts:{"Sauce":{t:"radio",o:["None","Ranch","Buffalo","Honey Mustard","Boom Boom Sauce"]},"Modifications":{t:"checkbox",o:["No Lettuce","No Tomato","Add Bacon","Add Avocado"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Fisher's Sandwich (Contains Shellfish)", desc:"Toasted Brioche Bun with battered and fried flaky white-meat cod, shellfish, melted American cheese.", opts:{"Modifications":{t:"checkbox",o:["No Cheese","Add Lettuce","Add Tomato"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Breakfast Burger", desc:"Toasted Brioche Bun, fresh grilled All Beef Patty, Fried Egg, Bacon, Caramelized Onion, American Cheese.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Classic Americana Burger with Fries", desc:"Toasted Brioche Bun, fresh grilled All Beef Patty, Caramelized Onion, American Cheese, Lettuce, Tomato, served with Fries.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Modifications":{t:"checkbox",o:["No Onion","No Lettuce","No Tomato","Add Bacon","Add Egg"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Mac and Cheese Burger", desc:"Toasted Brioche Bun, fresh grilled All Beef Patty, Mac and Cheese, Caramelized Onion, American Cheese.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"California Burger", desc:"Toasted Brioche Bun, fresh grilled All Beef Patty, Avocado, Bacon, Caramelized Onion, American Cheese.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Modifications":{t:"checkbox",o:["No Avocado","Extra Bacon"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "Spicy BBQ Bacon Burger (NEW!)": [
+        { name:"Spicy BBQ Bacon Burger (NEW!)", desc:"Cheddar Cheese, BBQ Hot and Spicy Sauce, Fried Onions, Caramelized Onions, Bacon, Jalapeño Slice.", opts:{"Cook":{t:"radio",o:["Medium","Medium Well","Well Done"]},"Modifications":{t:"checkbox",o:["No Jalapeños","Extra Bacon","Extra BBQ"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "Avocado Bacon Chicken Sandwich (NEW!)": [
+        { name:"Avocado Bacon Chicken Sandwich (NEW!)", desc:"Ranch Dressing, Chipotle in Adobo Sauce, Avocado, Bacon, Lettuce, Tomatoes.", opts:{"Modifications":{t:"checkbox",o:["No Avocado","No Bacon","Extra Ranch"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ],
+      "True Burger Sides": [
+        { name:"California Loaded Fries", desc:"Battered Fries topped with Avocado, Bacon, House Sauce, Caramelized Onions, and Melted Cheese.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Loaded Breakfast Fries", desc:"Battered Fries topped with Fried Egg, Bacon, House Sauce, Caramelized Onions, and Melted Cheese.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Mac and Cheese Loaded Fries", desc:"Battered Fries topped with Mac and Cheese, House Sauce, Caramelized Onions, and Melted Cheese.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Americana Loaded Fries", desc:"Battered Fries topped with House Sauce, Caramelized Onions, and Melted Cheese.", opts:{"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} },
+        { name:"Battered Fries", desc:"Classic Battered Fries.", opts:{"Size":{t:"radio",o:["Regular","Large"]},"Side":{t:"radio",o:["Bag of Chips","Apple","Orange","Banana"]},"Drink":{t:"radio",o:["Bubly","Fountain Beverage"]}} }
+      ]
+    }
+  },
+  "Starbucks": {
+    sections: {
+      "Protein Beverages": [
+        { name:"Iced Banana Cream Protein Matcha", desc:"24g of protein. Banana Protein Cream, matcha, oatmilk, ice. 330-510 cal · $7.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Oat Milk","Almond Milk","Whole Milk","2% Milk"]}} },
+        { name:"Chocolate Cream Protein Cold Brew", desc:"19g of protein. Smooth Chocolate Protein cold brew. 240-370 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Caramel Protein Latte", desc:"27g of protein. Bold espresso with caramel protein blend. 250-380 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Temp":{t:"radio",o:["Hot","Iced"]}} },
+        { name:"Vanilla Protein Latte", desc:"27g of protein. Bold espresso with vanilla protein blend. 240-360 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Temp":{t:"radio",o:["Hot","Iced"]}} },
+        { name:"Iced Vanilla Protein Latte", desc:"29g of protein. Bold iced latte with vanilla protein. 210-390 cal · $7.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Iced Protein Matcha", desc:"36g of protein. Smooth iced green tea latte with protein. 220-430 cal · $6.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Oat Milk","Almond Milk","Whole Milk","2% Milk"]}} },
+        { name:"Iced Sugar-Free Vanilla Protein Latte", desc:"29g of protein. No added sugar. 150-280 cal · $7.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Iced Sugar-Free Vanilla Protein Matcha", desc:"36g of protein. No added sugar. 180-350 cal · $7.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Iced Caramel Protein Latte", desc:"29g of protein. Iced handcrafted caramel latte. 220-400 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Sugar-Free Vanilla Protein Latte", desc:"27g of protein. No added sugar. 180-270 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Temp":{t:"radio",o:["Hot","Iced"]}} },
+        { name:"Sugar-Free Caramel Protein Latte", desc:"27g of protein. No added sugar. 180-280 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Temp":{t:"radio",o:["Hot","Iced"]}} },
+        { name:"Protein Matcha", desc:"28g of protein. Smooth green tea latte. 220-370 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Temp":{t:"radio",o:["Hot","Iced"]}} },
+        { name:"Iced Sugar-Free Caramel Protein Latte", desc:"29g of protein. No added sugar. 150-280 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Sugar-Free Vanilla Protein Matcha", desc:"28g of protein. No added sugar. 180-300 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Temp":{t:"radio",o:["Hot","Iced"]}} },
+        { name:"Caramel Protein Matcha", desc:"28g of protein. Caramel meets matcha. 220-380 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Temp":{t:"radio",o:["Hot","Iced"]}} },
+        { name:"Iced Caramel Protein Matcha", desc:"31g of protein. Caramel meets matcha. 160-420 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Sugar-Free Caramel Protein Matcha", desc:"28g of protein. No added sugar. 180-300 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Temp":{t:"radio",o:["Hot","Iced"]}} },
+        { name:"Iced Sugar-Free Caramel Protein Matcha", desc:"31g of protein. No added sugar. 130-340 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} }
+      ],
+      "Hot Coffee": [
+        { name:"Cortado", desc:"Three ristretto shots of Starbucks Blonde Espresso with perfectly steamed whole milk. 90 cal · $5.15", opts:{} },
+        { name:"Brown Sugar Oatmilk Cortado", desc:"Three ristretto shots of Starbucks Blonde Espresso with brown sugar and oatmilk. 130 cal · $5.75", opts:{} },
+        { name:"Freshly Brewed Coffee", desc:"Freshly brewed. Always just right. 0-5 cal · $3.45", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Add-ins":{t:"checkbox",o:["Room for milk","Extra hot","Light roast","Dark roast"]}} },
+        { name:"Caffe Misto", desc:"Brewed coffee and steamed milk. 30-160 cal · $4.35", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Pistachio Latte", desc:"Sweet pistachio and rich brown butter paired with espresso and steamed milk. 230-400 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Caffe Mocha", desc:"Rich espresso with bittersweet mocha sauce and steamed milk, topped with whipped cream. 200-450 cal · $5.85", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"White Chocolate Mocha", desc:"Espresso with white chocolate sauce and steamed milk, topped with whipped cream. 140-580 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Caramel Macchiato", desc:"Vanilla syrup, steamed milk, espresso, topped with caramel drizzle. 120-250 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Skinny Caramel Macchiato", desc:"Sugar-free vanilla syrup, nonfat milk, espresso, caramel drizzle. 105-210 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Cinnamon Dolce Latte", desc:"Freshly steamed milk and cinnamon dolce flavored syrup with espresso. 90-470 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Flat White", desc:"Bold ristretto shots with steamed whole milk. 170-290 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Caffe Latte", desc:"Dark rich espresso balanced with steamed milk and a light layer of foam. 50-300 cal · $5.45", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Vanilla Latte", desc:"Rich full-bodied espresso blended with creamy steamed milk and vanilla syrup. 130-320 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Skinny Vanilla Latte", desc:"Sugar-free vanilla syrup, nonfat milk, espresso. 90-225 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Cappuccino", desc:"Dark rich espresso under a smoothed layer of thick foam. 50-190 cal · $5.45", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Caffe Americano", desc:"Espresso shots topped with hot water. 5-25 cal · $4.75", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Shots":{t:"radio",o:["1 shot","2 shots","3 shots","4 shots"]}} },
+        { name:"Espresso", desc:"Smooth signature Espresso Roast. 5-20 cal · $3.65", opts:{"Shots":{t:"radio",o:["Solo","Doppio","Triple","Quad"]}} },
+        { name:"Blonde Espresso", desc:"Lightly roasted coffee, soft, mellow and flavorful. 5-20 cal · $2.45", opts:{"Shots":{t:"radio",o:["Solo","Doppio","Triple","Quad"]}} },
+        { name:"Espresso Con Panna", desc:"Espresso with a dollop of whipped cream. 30-50 cal · $3.75", opts:{"Shots":{t:"radio",o:["Solo","Doppio"]}} },
+        { name:"Espresso Macchiato", desc:"Rich espresso marked with a dollop of steamed milk and foam. 5-25 cal · $3.75", opts:{"Shots":{t:"radio",o:["Solo","Doppio"]}} },
+        { name:"Latte Macchiato", desc:"Espresso shots poured over lightly aerated milk. 60-290 cal · $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Toasted Coconut Latte", desc:"Toasted coconut-flavored syrup with Espresso Roast and steamed 2% milk. 160-290 cal · $5.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Lavender Latte", desc:"Blonde Espresso Roast and steamed milk with sweet floral lavender notes. 170-310 cal · $5.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} }
+      ],
+      "Cold Coffee": [
+        { name:"Iced Lavender Oatmilk Latte", desc:"Blonde Espresso, creamy oatmilk, ice, and sweet floral lavender. 160-290 cal · $6.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced Pistachio Latte", desc:"Sweet pistachio flavor with espresso and milk over ice. 190-370 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Caramel Macchiato", desc:"Vanilla syrup, milk, ice, espresso, caramel drizzle. 180-350 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Cappuccino", desc:"Less milk than a latte for a stronger espresso flavor over ice. 120-220 cal · $5.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Skinny Caramel Macchiato", desc:"Sugar-free vanilla, nonfat milk, espresso, caramel drizzle on ice. 140-280 cal · $4.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced White Chocolate Mocha", desc:"Espresso, white chocolate sauce, milk and ice with whipped cream. 310-560 cal · $6.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Iced Cinnamon Dolce Latte", desc:"Cinnamon dolce syrup, espresso, milk and ice. 240-420 cal · $6.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Mocha", desc:"Espresso, bittersweet mocha sauce, milk over ice with whipped cream. 260-450 cal · $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Iced Latte", desc:"Dark rich espresso combined with milk over ice. 100-180 cal · $5.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Flavor":{t:"radio",o:["None","Vanilla","Caramel","Hazelnut","Brown Sugar Oat"]}} },
+        { name:"Iced Vanilla Latte", desc:"Full-bodied espresso with milk and vanilla syrup over ice. 140-270 cal · $6.05", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Skinny Vanilla Latte", desc:"Espresso, nonfat milk, sugar-free vanilla syrup on ice. 60-110 cal · $3.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced Caffe Americano", desc:"Espresso shots topped with water over ice. 10-15 cal · $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Shots":{t:"radio",o:["2 shots","3 shots","4 shots"]}} },
+        { name:"Iced Latte Macchiato", desc:"Two shots of espresso, whole milk and ice. 120-220 cal · $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Espresso", desc:"Smooth signature Espresso Roast over ice. 5-20 cal · $3.65", opts:{"Shots":{t:"radio",o:["Solo","Doppio","Triple","Quad"]}} },
+        { name:"Iced Hazelnut Oatmilk Shaken Espresso", desc:"Blonde espresso with roasted hazelnut, shaken with ice and oatmilk. 100-220 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced Brown Sugar Oatmilk Shaken Espresso", desc:"Blonde espresso shaken with brown sugar, cinnamon and oatmilk. 90-170 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced Chocolate Almondmilk Shaken Espresso", desc:"Blonde espresso with cocoa and malt, shaken with almondmilk. 80-150 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced Espresso Con Panna", desc:"Espresso over ice with whipped cream. 30-50 cal · $3.75", opts:{"Shots":{t:"radio",o:["Solo","Doppio"]}} },
+        { name:"Iced Shaken Espresso", desc:"Rich full-bodied espresso, shaken, chilled and mellowed with sweetness. $4.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["None","Oat","Almond","Whole","2%"]}} },
+        { name:"Pistachio Cream Cold Brew", desc:"Cold brew sweetened with vanilla syrup, topped with silky pistachio cream cold foam. 150-370 cal · $5.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced Flat White", desc:"Smooth ristretto shots of espresso with whole milk and ice. 110-220 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Starbucks Cold Brew", desc:"Smooth small-batch cold coffee slow-steeped for 20 hours. 0-5 cal · $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Add-ins":{t:"checkbox",o:["Vanilla sweet cream","Splash of milk","Brown sugar syrup"]}} },
+        { name:"Nondairy Chocolate Cream Cold Brew", desc:"Cold brew with vanilla, topped with silky chocolaty cream cold foam. 180-290 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Nondairy Salted Caramel Cream Cold Brew", desc:"Savory meets sweet cold brew topped with salted caramel cream. 130-230 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced Toasted Coconut Latte", desc:"Toasted coconut syrup, Espresso Roast and 2% milk over ice. 130-250 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["2%","Whole","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Lavender Latte", desc:"Blonde Espresso and milk infused with sweet floral lavender notes, over ice. 130-250 cal · $5.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Ube Coconut Macchiato", desc:"Full-bodied espresso layered over creamy milk and toasted coconut syrup over ice. 290-480 cal · $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Cold Brew with Nondairy Vanilla Sweet Cream Cold Foam", desc:"Cold brew with vanilla, topped with nondairy cream cold foam. 100-220 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Cold Foam Cold Brew", desc:"Cold brew topped with cold foam. $5.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Raspberry Cream Cold Brew", desc:"Cold brew with vanilla syrup topped with silky raspberry cream. 130-220 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"White Chocolate Strawberry Cream Cold Brew", desc:"Cold brew topped with white chocolate strawberry cream. 170-280 cal · $4.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Chocolate Cream Cold Brew", desc:"Cold brew with vanilla syrup and silky chocolaty cream cold foam. $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Nondairy Vanilla Sweet Cream Cold Brew", desc:"Cold brew with vanilla and nondairy sweet cream. 80-190 cal · $5.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Nitro Cold Brew with Sweet Cream", desc:"Cold brew infused with nitrogen, topped with sweet cream. $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande"]}} },
+        { name:"Iced Coffee", desc:"Freshly brewed iced coffee served chilled and unsweetened over ice. 0-160 cal · $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Sweetener":{t:"radio",o:["Unsweetened","Classic syrup","Vanilla","Caramel"]}} }
+      ],
+      "Matcha": [
+        { name:"Matcha Lemonade", desc:"Starbucks matcha tea blend shaken with lemonade and ice. $4.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} }
+      ],
+      "Hot Tea": [
+        { name:"Teavana Brewed Tea", desc:"Vibrant Teavana brewed teas in classic blends and best-sellers. 0 cal · $3.95", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Flavor":{t:"radio",o:["Jade Citrus Mint","Peach Tranquility","Earl Grey","English Breakfast","Chamomile Blend"]}} },
+        { name:"Classic Chai Tea Latte", desc:"Black tea infused with cinnamon, clove and warming spices with steamed milk. 70-300 cal · $5.75", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Green Tea Latte", desc:"Smooth and creamy matcha lightly sweetened with steamed milk. 70-370 cal", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Honey Citrus Mint Tea", desc:"Jade Citrus Mint green tea, Peach Tranquility herbal tea, lemonade and honey. 60-150 cal · $4.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} }
+      ],
+      "Cold Tea": [
+        { name:"Iced Green Tea Latte", desc:"Smooth creamy matcha lightly sweetened over ice with milk. 100-350 cal · $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Shaken Iced Tea", desc:"Black, Green, or Passion Tango tea and lemonade, lightly sweetened and hand-shaken with ice. 90-220 cal · $4.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Flavor":{t:"radio",o:["Black Tea","Green Tea","Passion Tango"]}} },
+        { name:"Iced Lavender Cream Oatmilk Matcha", desc:"Smooth creamy matcha with oatmilk over ice, topped with lavender cream. 300-480 cal · $6.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Iced Tea Lemonade", desc:"Black, Green, or Passion Tango tea and lemonade, lightly sweetened and hand-shaken with ice. 90-220 cal · $4.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Flavor":{t:"radio",o:["Black Tea","Green Tea","Passion Tango"]}} },
+        { name:"Iced Classic Chai Tea Latte", desc:"Black tea with cinnamon, clove and warming spices combined with milk and ice. 180-350 cal · $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Lavender Cream Chai", desc:"Flavorful chai spices and milk over ice, topped with sweet lavender cream. 320-500 cal · $5.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} }
+      ],
+      "Refresher": [
+        { name:"Strawberry Acai Refresher", desc:"Sweet strawberry flavors accented by passion fruit & acai notes. 80-190 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Water","Coconut Milk","Lemonade"]}} },
+        { name:"Mango Dragonfruit Refresher Lemonade", desc:"Mango and dragonfruit with lemonade. $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Pink Drink", desc:"Strawberry Acai Refresher with coconut milk. $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Lavender Oatmilk Chill", desc:"Floral, sweet, soothing lavender with creamy oatmilk, hand-shaken. 180-330 cal · $4.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Pink Drink with Vanilla Sweet Cream Cold Foam", desc:"Pink Drink topped with vanilla sweet cream cold foam. 260-480 cal · $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} }
+      ],
+      "Frappuccino Blended Beverages": [
+        { name:"Coffee Frappuccino", desc:"Coffee, milk and ice blended together. 180-350 cal · $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Espresso Frappuccino", desc:"Coffee combined with a shot of espresso and milk, blended with ice. 140-270 cal · $7.20", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Lavender Crème Frappuccino", desc:"Sweet lavender with vanilla syrup, milk and ice, topped with whipped cream. 260-450 cal · $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Caramel Frappuccino", desc:"Buttery caramel syrup meets coffee, milk and ice. Topped with whipped cream and caramel drizzle. 170-510 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Mocha Frappuccino", desc:"Mocha sauce, Frappuccino roast coffee, milk and ice. 180-520 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Java Chip Frappuccino", desc:"Mocha sauce and Frappuccino chips blended with coffee, milk and ice. 220-600 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"White Chocolate Mocha Frappuccino", desc:"White chocolate Frappuccino roast coffee, milk and ice. 190-550 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Caffe Vanilla Frappuccino", desc:"Frappuccino roast coffee and vanilla bean powder with milk and ice. 190-530 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Cinnamon Dolce Frappuccino", desc:"Coffee with cinnamon dolce syrup blended with milk and ice. 170-490 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Cinnamon Dolce Creme Frappuccino", desc:"Cinnamon flavored syrup blended with milk and ice. 210-450 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Classic Chai Creme Frappuccino", desc:"Spicy chai blended with milk and ice, finished with whipped cream and cinnamon. 100-160 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"White Chocolate Mocha Crème Frappuccino", desc:"White chocolate Frappuccino roast coffee, milk and ice. 300-530 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Pistachio Crème Frappuccino", desc:"Sweet pistachio blended with milk and ice. 240-410 cal · $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Pistachio Frappuccino", desc:"Sweet pistachio blended with coffee, milk and ice. 270-470 cal · $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Strawberry Shortcake Frappuccino", desc:"Strawberry Crème Frappuccino blended beverage, limited time. 260-450 cal · $5.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Double Chocolaty Chip Crème Frappuccino", desc:"Mocha sauce and chocolaty chips blended with milk and ice. 180-540 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Green Tea Creme Frappuccino", desc:"Sweetened matcha green tea blended with milk and ice, topped with whipped cream. 200-550 cal · $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Vanilla Bean Crème Frappuccino", desc:"Rich creamy vanilla bean, milk and ice topped with whipped cream. 160-490 cal · $5.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Strawberries & Crème Frappuccino", desc:"Strawberries and milk blended with ice topped with whipped cream. 170-460 cal · $4.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} }
+      ],
+      "Hot Chocolate, Lemonade & More": [
+        { name:"Hot Chocolate", desc:"Steamed milk with vanilla and mocha-flavored syrups, topped with whipped cream. 130-550 cal · $4.75", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Pistachio Creme", desc:"Sweet pistachio and rich brown butter with steamed milk. 150-410 cal · $5.75", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Lemonade", desc:"Fresh, tangy, refreshing lemonade. 100-170 cal · $3.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"White Hot Chocolate", desc:"White chocolate with steamed milk topped with whipped cream. 180-590 cal · $5.75", opts:{"Size":{t:"radio",o:["Short","Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} }
+      ],
+      "Paninis": [
+        { name:"Crispy Grilled Cheese Sandwich", desc:"White cheddar and mozzarella cheeses on sourdough bread, topped with Parmesan. 540 cal · $7.45", opts:{} },
+        { name:"Ham & Swiss Panini", desc:"Ham and Swiss cheese with Dijon butter. 480 cal · $8.45", opts:{} },
+        { name:"Tomato & Mozzarella Panini", desc:"Roasted tomatoes, mozzarella, spinach and basil pesto on toasted focaccia. 350 cal · $7.25", opts:{} }
+      ],
+      "New Items": [
+        { name:"Spicy Falafel Pocket", desc:"Smashed falafel, creamy hummus, roasted red bell peppers, pickled onions and spicy herb sauce. 230 cal · $4.45", opts:{} },
+        { name:"Potato, Cheddar & Chive Bakes", desc:"Diced potatoes, cheddar cheese, spinach and chives. 210 cal · $5.95", opts:{} },
+        { name:"Nitro Cold Brew", desc:"Cold brew infused with nitrogen for a smooth, creamy finish. $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande"]}} },
+        { name:"Nitro Cold Brew with Salted Honey Cold Foam", desc:"Nitro cold brew topped with salted honey cold foam. $5.25", opts:{"Size":{t:"radio",o:["Tall","Grande"]}} },
+        { name:"Dragon Drink with Vanilla Sweet Cream Cold Foam", desc:"Dragon drink topped with vanilla sweet cream cold foam. 250-470 cal · $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Salted Caramel Cream Cold Foam Cold Brew", desc:"Cold brew topped with salted caramel cream cold foam. $5.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Cold Brew with Salted Honey Cold Foam", desc:"Cold brew topped with salted honey cold foam. $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} }
+      ],
+      "Seasonal Beverages": [
+        { name:"Blonde Vanilla Latte", desc:"Starbucks Blonde Espresso, steamed milk and vanilla syrup. 70-360 cal · $6.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Nitro Chocolate Creme", desc:"Velvety smooth nitro cold brew with creamy nitro milk and rich chocolate. 180-280 cal · $4.25", opts:{"Size":{t:"radio",o:["Tall","Grande"]}} },
+        { name:"Iced Blonde Caffe Americano", desc:"Blonde espresso shots topped with water over ice. 10-25 cal · $3.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced Blonde Flat White", desc:"Ristretto shots of Starbucks Blonde Espresso with whole milk over ice. 110-220 cal · $4.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]}} },
+        { name:"Iced Blonde Cappuccino", desc:"Smooth Blonde Espresso under a smoothed layer of cold foam over ice. 45-180 cal · $3.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Blonde Cappuccino", desc:"Smooth Blonde Espresso under a thick layer of foam. 50-190 cal · $4.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Blonde Caffe Latte", desc:"Smooth Blonde Espresso balanced with milk and ice. 50-210 cal · $4.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Blonde Caffe Latte", desc:"Smooth Blonde Espresso balanced with steamed milk and light foam. 50-300 cal · $4.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Blonde Vanilla Latte", desc:"Smooth Blonde Espresso, milk, ice and vanilla syrup. 80-300 cal · $6.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Doubleshot on Ice", desc:"Espresso shaken with classic syrup and ice, topped with a splash of milk. 25-180 cal · $3.45", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Peach Green Tea", desc:"Green tea, sweet peach and ginger layered over ice. 60-150 cal · $4.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Blonde Caffe Americano", desc:"Blonde espresso shots topped with water to produce a light layer of crema. 5-25 cal · $2.65", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Shots":{t:"radio",o:["2 shots","3 shots","4 shots"]}} },
+        { name:"Iced Peach Green Tea Lemonade", desc:"Green tea, sweet peach, ginger and lemonade layered over ice. 100-240 cal · $4.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Iced Vanilla Sweet Cream Cold Brew", desc:"Slow-steeped cold brew with vanilla sweet cream. 100-210 cal · $5.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Pistachio Cream Cold Brew", desc:"Cold brew sweetened with vanilla syrup, topped with pistachio cream cold foam. 150-370 cal · $5.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]}} },
+        { name:"Pistachio Latte", desc:"Sweet pistachio and rich brown butter with espresso and steamed milk. 230-400 cal · $6.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Temp":{t:"radio",o:["Hot","Iced"]}} },
+        { name:"Iced Pistachio Latte", desc:"Sweet pistachio with espresso and milk over ice. 190-370 cal · $6.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Caramel Ribbon Frappuccino", desc:"Caramel ribbon drizzle blended with coffee, milk and ice. $6.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Iced Salted Caramel Mocha", desc:"Espresso and iced milk blended with mocha sauce and toffee nut syrup. 330-590 cal · $3.95", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti","Trenta"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Salted Caramel Mocha Frappuccino", desc:"Mocha sauce and toffee nut syrup blended with coffee, milk and ice. 260-570 cal · $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Salted Caramel Mocha Creme Frappuccino", desc:"Mocha sauce and toffee nut syrup blended with milk and ice. 300-510 cal · $4.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Vanilla Bean Crème Frappuccino", desc:"Rich creamy vanilla bean, milk and ice topped with whipped cream. $5.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]}} },
+        { name:"Strawberry Frappuccino Blended Crème", desc:"Strawberry blended crème frappuccino. $6.25", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} },
+        { name:"Mocha Cookie Crumble Frappuccino", desc:"Mocha sauce, coffee, milk and ice topped with cookie crumbles. $6.75", opts:{"Size":{t:"radio",o:["Tall","Grande","Venti"]},"Milk":{t:"radio",o:["Whole","2%","Oat","Almond","Coconut","Skim"]},"Whip":{t:"radio",o:["With whip","No whip"]}} }
+      ],
+      "Bakery": [
+        { name:"Jalapeño Chicken Pocket", desc:"Chile lavash flatbread with diced chicken, charred poblanos, green jalapeños. 200 cal · $4.45", opts:{} },
+        { name:"Banana Walnut Bread", desc:"Bananas, walnuts and pecans in moist classic banana bread. 420 cal · $4.95", opts:{} },
+        { name:"Pumpkin Bread", desc:"Gently spiced bread with pumpkin flavors and pepitas. 410 cal · $4.25", opts:{} },
+        { name:"Butter Croissant", desc:"100% butter croissant with golden crunchy top and soft flaky layers. 310 cal · $4.25", opts:{} },
+        { name:"Chocolate Croissant", desc:"Flaky croissant with chocolate. 330 cal · $4.65", opts:{} },
+        { name:"Cheese Danish", desc:"Flaky pastry folded around reduced-fat cream cheese. 320 cal · $4.25", opts:{} },
+        { name:"Iced Lemon Pound Cake", desc:"Moist lemon cake with sweet icing. 470 cal · $4.95", opts:{} },
+        { name:"Cinnamon Pull-Apart", desc:"Croissant pieces with cinnamon sugar and crunchy streusel. 300 cal · $3.65", opts:{} },
+        { name:"Blueberry Streusel Muffin", desc:"Golden brown muffin with blueberries and cinnamon-streusel topping. 370 cal · $4.25", opts:{} },
+        { name:"Berry Blondie", desc:"300 cal · $3.95", opts:{} },
+        { name:"Cookie Croissant Swirl", desc:"270 cal · $3.95", opts:{} },
+        { name:"Chocolate Pistachio Loaf", desc:"Chocolate and pistachio-flavored cake swirled together for a moist marble loaf. 400 cal · $4.25", opts:{} }
+      ],
+      "Treats": [
+        { name:"Chocolate Chip Cookie", desc:"Single-origin chocolate chip cookie. Allow us to warm yours. 310 cal · $3.75", opts:{} },
+        { name:"Birthday Cake Pop", desc:"Vanilla cake and icing dipped in pink chocolaty coating with white sprinkles. 170 cal · $3.95", opts:{} },
+        { name:"Chocolate Cake Pop", desc:"Chocolate cake with chocolate butter cream, dipped in dark chocolate. 160 cal · $3.95", opts:{} },
+        { name:"Frog Cake Pop", desc:"Vanilla cake dipped in green chocolaty icing, decorated as a cute frog. 170 cal · $3.45", opts:{} }
+      ],
+      "Breakfast": [
+        { name:"Bacon & Gouda Artisan Breakfast Sandwich", desc:"Artisan roll with bacon, gouda cheese and egg. 350 cal · $6.25", opts:{} },
+        { name:"Reduced Fat Turkey Bacon & White Cheddar Classic Breakfast Sandwich", desc:"Turkey bacon, white cheddar on an English muffin. 230 cal · $5.65", opts:{} },
+        { name:"Sausage & Cheddar Classic Breakfast Sandwich", desc:"Sausage patty and cheddar on an English muffin. 500 cal · $5.65", opts:{} },
+        { name:"Spinach & Feta Breakfast Wrap", desc:"Egg whites, spinach, feta, tomatoes and seasoning in a whole-wheat wrap. 290 cal · $5.95", opts:{} },
+        { name:"Egg White & Red Pepper Sous Vide Egg Bites", desc:"Cage-free egg whites, roasted red pepper and spinach. $5.95", opts:{} },
+        { name:"Bacon & Gruyere Sous Vide Egg Bites", desc:"Cage-free eggs with bacon, gruyere and monterey jack. $5.95", opts:{} },
+        { name:"Ham & Cheese Croissant", desc:"Ham and cheese on a croissant. $5.25", opts:{} },
+        { name:"Double Smoked Bacon & Cheddar Breakfast Sandwich", desc:"Double smoked bacon & cheddar with egg on a toasted croissant. $6.45", opts:{} },
+        { name:"Egg, Pesto & Mozzarella Sandwich", desc:"Cage free egg frittata with kale, basil pesto and mozzarella on a toasted cheddar and onion bun. 390 cal · $6.25", opts:{} }
+      ]
+    }
+  },
+  "Peet's Coffee at Kimmel": {
+    sections: {
+      "Peet's Brewed Coffee": [
+        { name:"Coffee", desc:"Freshly brewed Peet's blend. $3.09", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]}} }
+      ],
+      "Peet's Espresso": [
+        { name:"Cappuccino", desc:"Espresso with steamed and foamed milk. 120-160 cal · $4.79", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Americano", desc:"Espresso shots with hot water. 15-25 cal · $4.19", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]}} },
+        { name:"Caffe Latte", desc:"Espresso with steamed milk. 170-240 cal · $5.68", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Caramel Latte", desc:"Espresso with caramel and steamed milk. 300-420 cal · $5.49", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Vanilla Latte", desc:"Espresso with vanilla and steamed milk. 240-370 cal · $5.49", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Cafe Mocha", desc:"Espresso with mocha and steamed milk, topped with whipped cream. 360-480 cal · $5.29", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"White Chocolate Mocha", desc:"Espresso with white chocolate and steamed milk. 360-480 cal · $5.89", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Espresso", desc:"Rich, full-bodied espresso. 10-25 cal · $2.99", opts:{"Shots":{t:"radio",o:["Single","Double","Triple"]}} },
+        { name:"Havana Cappuccino", desc:"Espresso with steamed milk and rich foam. 230-330 cal · $5.89", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Caramel Macchiato", desc:"Espresso with vanilla, milk and caramel drizzle. $5.89", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} }
+      ],
+      "Peet's Iced Classics": [
+        { name:"Iced Tea", desc:"Refreshing iced tea. $4.19", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Iced Vanilla Latte", desc:"Espresso with vanilla and milk over ice. 240-370 cal · $5.49", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Iced Latte", desc:"Espresso with milk over ice. 170-240 cal · $4.79", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Iced Mocha", desc:"Espresso with mocha and milk over ice. 360-480 cal · $5.29", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Iced Tea Lemonade", desc:"Iced tea with lemonade. $4.59", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]}} }
+      ],
+      "Coffee-Free Drinks": [
+        { name:"Hot Cocoa", desc:"Rich hot cocoa. 530 cal · $4.60", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]}} },
+        { name:"Matcha Green Tea Latte", desc:"Matcha with steamed milk. 210-350 cal · $4.99", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} },
+        { name:"Chai Latte", desc:"Spiced chai with steamed milk. 200-300 cal · $4.99", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]},"Milk":{t:"radio",o:["Whole","Oat","Almond","Skim"]}} }
+      ],
+      "Peet's Tea by the Cup": [
+        { name:"Hot Tea", desc:"Choice of tea brewed hot. $4.19", opts:{"Tea":{t:"radio",o:["Black","Green","Herbal"]}} },
+        { name:"Black Tea", desc:"Classic black tea. $4.19", opts:{} },
+        { name:"Earl Grey", desc:"Aromatic Earl Grey tea. $4.19", opts:{} },
+        { name:"Green Tea Tropical", desc:"Tropical green tea. $4.19", opts:{} },
+        { name:"Wild Berry Hibiscus", desc:"Fruity hibiscus tea. $4.19", opts:{} },
+        { name:"Chamomile Citrus", desc:"Soothing chamomile with citrus. $4.19", opts:{} },
+        { name:"Organic Mint Melange", desc:"Refreshing organic mint tea. $4.19", opts:{} },
+        { name:"Masala Chai", desc:"Spiced chai tea. $4.19", opts:{} }
+      ],
+      "Bakery": [
+        { name:"Plain Bagel", desc:"Classic plain bagel. $2.69", opts:{} },
+        { name:"Yogurt Blueberry Muffin", desc:"Moist blueberry muffin. $4.89", opts:{} },
+        { name:"Yogurt Banana Muffin", desc:"Moist banana muffin. $4.89", opts:{} },
+        { name:"Double Chocolate Muffin", desc:"Rich double chocolate muffin. $4.89", opts:{} },
+        { name:"Cranberry Muffin", desc:"Tart cranberry muffin. $4.89", opts:{} },
+        { name:"Chocolate Chip Muffin", desc:"Classic chocolate chip muffin. $4.89", opts:{} },
+        { name:"Cinnamon Bun", desc:"Freshly baked cinnamon bun. $2.99", opts:{} },
+        { name:"Almond Croissant", desc:"Flaky croissant with almond filling. $4.95", opts:{} },
+        { name:"Chocolate Croissant", desc:"Flaky croissant with chocolate. $4.29", opts:{} },
+        { name:"Plain Croissant", desc:"Classic buttery croissant. $3.29", opts:{} },
+        { name:"Apple Turnover", desc:"Flaky pastry with apple filling. $4.39", opts:{} },
+        { name:"Cheese Danish", desc:"Flaky pastry with cream cheese. $2.99", opts:{} },
+        { name:"Chocolate Chip Scone", desc:"Buttery scone with chocolate chips. $4.09", opts:{} },
+        { name:"Blueberry Scone", desc:"Buttery scone with blueberries. $4.09", opts:{} }
+      ],
+      "Signature Cold Beverages": [
+        { name:"Cold Brew Black Tie", desc:"Cold brew with cream and spices. $5.29", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]}} },
+        { name:"Cold Brew Oat Latte", desc:"Cold brew with oat milk. $6.39", opts:{"Size":{t:"radio",o:["Small","Medium","Large"]}} }
+      ],
+      "Brewed Tea": [
+        { name:"Black, Green, Herbal (Hot)", desc:"Please specify which tea. $4.19", opts:{"Tea":{t:"radio",o:["Black","Green","Herbal"]}} },
+        { name:"Black, Green, Hibiscus (Iced)", desc:"Please specify which tea. $4.19", opts:{"Tea":{t:"radio",o:["Black","Green","Hibiscus"]}} }
+      ]
+    }
+  }
+};
+
+const LOCATIONS = {
+  dining: [
+    { name:"Crave NYU", sub:"LaGuardia & Washington Pl" },
+    { name:"Upstein", sub:"Weinstein Residence Hall" },
+    { name:"True Burger at UHall", sub:"University Hall" }
+  ],
+  cafe: [
+    { name:"Starbucks", sub:"Multiple NYU locations" },
+    { name:"Peet's Coffee at Kimmel", sub:"Kimmel Center for Student Life" }
+  ]
+};
+
+const PLEDGE_PASSWORD = "nodrop";
+let userRole = null;
+let curFilter = 'all';
+window.S = { name:'', category:'', location:'', section:'', cart:[] };
+let S = window.S;
+let curItem = null;
+window._orders = [];
+
+function enterAs(role) {
+  userRole = role;
+  document.getElementById('gate').style.display = 'none';
+  if (role === 'pledge') {
+    document.getElementById('nav-tabs').innerHTML = `<button class="tab-btn active" onclick="switchView('history',this)">Orders Dashboard</button>`;
+    switchView('history', document.querySelector('.tab-btn'));
+  }
+}
+window.enterAs = enterAs;
+window._realEnterAs = enterAs;
+if (window._pendingEnterRole) enterAs(window._pendingEnterRole);
+function checkPw() {
+  if (document.getElementById('pw-input').value === PLEDGE_PASSWORD) enterAs('pledge');
+  else { document.getElementById('pw-err').style.display='block'; document.getElementById('pw-input').value=''; }
+}
+window.checkPw = checkPw;
+
+function switchView(v, btn) {
+  document.querySelectorAll('.view').forEach(function(e){e.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(e){e.classList.remove('active');});
+  document.getElementById('view-'+v).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (v==='history') {
+    // Merge and deduplicate by id
+    const local = getOrdersLocal();
+    const fb = window._orders || [];
+    const seen = new Set();
+    const merged = [];
+    fb.concat(local).forEach(function(o) {
+      if (o.id && !seen.has(o.id)) { seen.add(o.id); merged.push(o); }
+    });
+    merged.sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
+    window._orders = merged;
+    updateStats();
+    renderOrders();
+  }
+}
+window.switchView = switchView;
+
+const STEPS = ['step-name','step-category','step-location','step-menu','step-customize','step-cart'];
+function showOnly(id) { STEPS.forEach(s => { document.getElementById(s).style.display = s===id?'':'none'; }); renderBC(); }
+
+function renderBC() {
+  const crumbs = [{label:'Home',fn:"goToStep('name')"}];
+  if (S.name) crumbs.push({label:S.name,fn:"goToStep('category')"});
+  if (S.category) crumbs.push({label:S.category==='dining'?'Dining Hall':'Café',fn:"goToStep('location')"});
+  if (S.location) crumbs.push({label:S.location,fn:"goToMenu()"});
+  if (S.cart.length) crumbs.push({label:'Cart ('+S.cart.length+')',fn:"showOnly('step-cart')"});
+  document.getElementById('breadcrumb').innerHTML = crumbs.map((c,i)=>{
+    const isLast = i===crumbs.length-1;
+    return (i>0?'<span class="bc-sep">›</span>':'')+`<span class="bc-item ${isLast?'active':''}" onclick="${isLast?'':c.fn}">${c.label}</span>`;
+  }).join('');
+}
+
+function goToStep(step) {
+  if (step==='name') { S={name:'',category:'',location:'',section:'',cart:[]}; showOnly('step-name'); }
+  else if (step==='category') showOnly('step-category');
+  else if (step==='location') showOnly('step-location');
+}
+window.goToStep = goToStep;
+
+function goToStep1() {
+  const n = document.getElementById('brother-name').value.trim();
+  const p = document.getElementById('brother-phone').value.trim();
+  if (!n) { document.getElementById('brother-name').focus(); return; }
+  if (!p) { document.getElementById('brother-phone').focus(); return; }
+  S.name = n; S.phone = p; showOnly('step-category'); renderBC();
+}
+window.goToStep1 = goToStep1;
+
+function selectCategory(cat) {
+  S.category = cat;
+  document.getElementById('loc-grid').innerHTML = LOCATIONS[cat].map((l,li)=>
+    `<div class="loc-card" onclick="selectLocationIdx(${li})"><div><div class="loc-name">${l.name}</div><div class="loc-sub">${l.sub}</div></div><div class="arrow">›</div></div>`
+  ).join('');
+  showOnly('step-location'); renderBC();
+}
+window.selectCategory = selectCategory;
+
+function selectLocationIdx(idx) {
+  selectLocation(LOCATIONS[S.category][idx].name);
+}
+window.selectLocationIdx = selectLocationIdx;
+
+function selectLocation(loc) {
+  S.location = loc;
+  const sections = Object.keys(MENUS[loc].sections);
+  S.section = sections[0];
+  renderMenu();
+  showOnly('step-menu'); renderBC();
+}
+window.selectLocation = selectLocation;
+
+function renderMenu() {
+  const sections = Object.keys(MENUS[S.location].sections);
+  // Sticky jump tabs — use index to avoid apostrophe issues in onclick
+  document.getElementById('section-tabs').innerHTML = sections.map((s,si)=>
+    `<button class="sec-tab" id="tab-${s.replace(/\W/g,'_')}" onclick="scrollToSectionIdx(${si})">${s}</button>`
+  ).join('');
+  // All sections rendered top to bottom
+  document.getElementById('menu-items-list').innerHTML = sections.map((sec,si) => {
+    const items = MENUS[S.location].sections[sec];
+    const itemsHtml = items.map((item,idx) =>
+      `<div class="menu-item" onclick="openCustomizeByIdx(${si},${idx})">
+        <div style="flex:1"><div class="mi-name">${item.name}</div><div class="mi-desc">${item.desc}</div></div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          ${item.img && IMGS[item.img] ? `<img src="${IMGS[item.img]}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+          <button class="mi-add" onclick="event.stopPropagation();openCustomizeByIdx(${si},${idx})">+</button>
+        </div>
+      </div>`
+    ).join('');
+    return `<div class="menu-section-block" id="sec-${sec.replace(/\W/g,'_')}">
+      <div class="menu-section-header">${sec}</div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+  observeSections();
+}
+
+function scrollToSectionIdx(si) {
+  const sec = Object.keys(MENUS[S.location].sections)[si];
+  const el = document.getElementById('sec-'+sec.replace(/\W/g,'_'));
+  if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+window.scrollToSectionIdx = scrollToSectionIdx;
+
+function scrollToSection(sec) {
+  const el = document.getElementById('sec-'+sec.replace(/\W/g,'_'));
+  if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+window.scrollToSection = scrollToSection;
+
+function observeSections() {
+  if (window._sectionObserver) window._sectionObserver.disconnect();
+  const sections = Object.keys(MENUS[S.location].sections);
+  const opts = { rootMargin: '-70px 0px -60% 0px', threshold: 0 };
+  window._sectionObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const secId = entry.target.id.replace('sec-','');
+        document.querySelectorAll('.sec-tab').forEach(t => {
+          t.classList.toggle('active', t.id === 'tab-'+secId);
+        });
+      }
+    });
+  }, opts);
+  sections.forEach(sec => {
+    const el = document.getElementById('sec-'+sec.replace(/\W/g,'_'));
+    if (el) window._sectionObserver.observe(el);
+  });
+}
+
+function openCustomizeByIdx(si, idx) {
+  const sec = Object.keys(MENUS[S.location].sections)[si];
+  S.section = sec;
+  openCustomize(idx);
+}
+window.openCustomizeByIdx = openCustomizeByIdx;
+
+function openCustomizeFromSection(sec, idx) {
+  S.section = sec;
+  openCustomize(idx);
+}
+window.openCustomizeFromSection = openCustomizeFromSection;
+
+function goToMenu() {
+  renderMenu();
+  showOnly('step-menu'); renderBC();
+}
+window.goToMenu = goToMenu;
+
+function openCustomize(idx) {
+  try {
+    const item = MENUS[S.location].sections[S.section][idx];
+    if (!item) { toast('Item not found'); return; }
+    curItem = { name:item.name, desc:item.desc, opts:item.opts||{}, idx, qty:1, selections:{}, notes:'' };
+    Object.entries(item.opts||{}).forEach(([g,group]) => {
+      if (group.t==='radio') curItem.selections[g] = group.o[0];
+      else curItem.selections[g] = [];
+    });
+    let parts = [];
+    parts.push('<div class="modal-title">'+item.name+'</div><div class="modal-desc">'+item.desc+'</div>');
+    Object.entries(item.opts||{}).forEach(([g, group]) => {
+      let sec = '<div class="modal-section"><div class="modal-section-title">'+g+'</div>';
+      group.o.forEach(function(opt,oi) {
+        const safeG = g.replace(/[^a-zA-Z0-9]/g,'-');
+        const id = 'opt-'+safeG+'-'+oi;
+        const checked = group.t==='radio' && oi===0 ? 'checked' : '';
+        const sel = group.t==='radio' && oi===0 ? ' selected' : '';
+        const safeOpt = String(opt).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+        const safeGAttr = g.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        sec += '<label class="opt-row'+sel+'" id="row-'+id+'">'+
+          '<input type="'+group.t+'" id="'+id+'" name="grp-'+safeG+'"'+
+          ' data-g="'+safeGAttr+'" data-v="'+safeOpt+'" data-t="'+group.t+'" '+checked+
+          ' onchange="handleOptEvt(this)">'+
+          '<span class="opt-label">'+opt+'</span></label>';
+      });
+      sec += '</div>';
+      parts.push(sec);
+    });
+    parts.push('<div class="qty-ctrl"><span class="qty-label">Quantity</span>'+
+      '<button class="qty-btn" onclick="changeQty(-1)">−</button>'+
+      '<span class="qty-num" id="modal-qty">1</span>'+
+      '<button class="qty-btn" onclick="changeQty(1)">+</button></div>'+
+      '<textarea class="modal-notes" id="modal-notes" placeholder="Special instructions (optional)..."></textarea>'+
+      '<div class="modal-actions">'+
+      '<button class="modal-cancel" onclick="goToMenu()">Cancel</button>'+
+      '<button class="modal-add-btn" onclick="addToCart()">Add to order</button>'+
+      '</div>');
+    document.getElementById('modal-box').innerHTML = parts.join('');
+    showOnly('step-customize'); renderBC();
+  } catch(e) { toast('Error opening item. Please try again.'); console.error(e); }
+}
+window.openCustomize = openCustomize;
+
+function handleOptEvt(el) {
+  try {
+    const group = el.getAttribute('data-g');
+    const opt = el.getAttribute('data-v');
+    const type = el.getAttribute('data-t');
+    if (type==='radio') {
+      curItem.selections[group] = opt;
+      const safeName = el.name;
+      document.querySelectorAll('input[name="'+safeName+'"]').forEach(function(inp) {
+        inp.closest('.opt-row').classList.toggle('selected', inp.checked);
+      });
+    } else {
+      if (!Array.isArray(curItem.selections[group])) curItem.selections[group]=[];
+      if (el.checked) { if (!curItem.selections[group].includes(opt)) curItem.selections[group].push(opt); }
+      else curItem.selections[group] = curItem.selections[group].filter(function(o){return o!==opt;});
+      el.closest('.opt-row').classList.toggle('selected', el.checked);
+    }
+  } catch(e) { console.error('handleOptEvt error:', e); }
+}
+window.handleOptEvt = handleOptEvt;
+
+function handleOpt(group, opt, type, el, rowId) {
+  if (type==='radio') {
+    curItem.selections[group] = opt;
+    document.querySelectorAll(`input[name="g-${group.replace(/\W/g,'-')}"]`).forEach(inp => {
+      inp.closest('.opt-row').classList.toggle('selected', inp.checked);
+    });
+  } else {
+    if (!Array.isArray(curItem.selections[group])) curItem.selections[group]=[];
+    if (el.checked) curItem.selections[group].push(opt);
+    else curItem.selections[group] = curItem.selections[group].filter(o=>o!==opt);
+    el.closest('.opt-row').classList.toggle('selected', el.checked);
+  }
+}
+window.handleOpt = handleOpt;
+
+function changeQty(d) {
+  curItem.qty = Math.max(1, curItem.qty + d);
+  document.getElementById('modal-qty').textContent = curItem.qty;
+}
+window.changeQty = changeQty;
+
+function addToCart() {
+  curItem.notes = document.getElementById('modal-notes').value.trim();
+  S.cart.push({...curItem});
+  toast(`Added: ${curItem.name}`);
+  renderCartDisplay();
+  showOnly('step-cart'); renderBC();
+}
+window.addToCart = addToCart;
+
+function renderCartDisplay() {
+  const el = document.getElementById('cart-display');
+  if (!S.cart.length) { el.innerHTML='<div style="color:#bbb;font-size:13px;">Your cart is empty.</div>'; return; }
+  el.innerHTML = `<div style="font-size:12px;font-weight:600;color:#999;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;">From ${S.location}</div>` +
+    S.cart.map((item,i) => {
+      const sels = Object.entries(item.selections||{}).map(([k,v])=>`${k}: ${Array.isArray(v)?v.join(', '):v}`).filter(s=>!s.endsWith(': ')).join(' · ');
+      return `<div class="cart-item">
+        <div>
+          <div class="ci-name">${item.qty>1?item.qty+'× ':''}${item.name}</div>
+          ${sels?`<div class="ci-detail">${sels}</div>`:''}
+          ${item.notes?`<div class="ci-detail" style="font-style:italic;">"${item.notes}"</div>`:''}
+        </div>
+        <button class="ci-remove" onclick="removeFromCart(${i})">×</button>
+      </div>`;
+    }).join('');
+}
+function removeFromCart(i) {
+  S.cart.splice(i,1);
+  if (!S.cart.length) { goToMenu(); return; }
+  renderCartDisplay(); renderBC();
+}
+window.removeFromCart = removeFromCart;
+
+// Local order storage helpers
+function saveOrderLocal(order) {
+  try {
+    const orders = getOrdersLocal();
+    orders.unshift(order);
+    localStorage.setItem('omegaeats_orders', JSON.stringify(orders));
+    window._orders = orders;
+  } catch(e) { console.error(e); }
+}
+function getOrdersLocal() {
+  try { return JSON.parse(localStorage.getItem('omegaeats_orders')||'[]'); }
+  catch(e) { return []; }
+}
+function updateOrderLocal(id, updates) {
+  try {
+    const orders = getOrdersLocal();
+    const idx = orders.findIndex(o=>o.id===id);
+    if (idx>=0) Object.assign(orders[idx], updates);
+    localStorage.setItem('omegaeats_orders', JSON.stringify(orders));
+    window._orders = orders;
+  } catch(e) { console.error(e); }
+}
+
+async function submitOrder() {
+  if (!S.cart.length) return;
+  const btn = document.getElementById('submit-btn');
+  btn.disabled=true; btn.textContent='Placing order...';
+
+  const items = S.cart.map(function(item) {
+    const sels = Object.entries(item.selections||{}).map(function(e){
+      const k=e[0],v=e[1];
+      return k+': '+(Array.isArray(v)?v.join(', '):v);
+    }).filter(function(s){return !s.endsWith(': ');}).join(', ');
+    return { qty:item.qty, desc: item.name+(sels?' ('+sels+')':'') };
+  });
+
+  const assignedPledges = getSelectedPledges();
+  const orderData = {
+    id: 'local_'+Date.now(),
+    name: S.name,
+    phone: S.phone||'',
+    hall: S.location,
+    items: items,
+    notes: document.getElementById('order-notes').value.trim(),
+    pickup: document.getElementById('pickup-time').value,
+    assignedTo: assignedPledges,
+    status: 'pending',
+    completedBy: null,
+    createdAt: new Date().toISOString()
+  };
+
+  // Try Firebase REST
+  if (typeof DB_READY !== 'undefined' && DB_READY) {
+    try {
+      const newId = await dbPush('/orders', orderData);
+      if (newId) orderData.id = newId;
+    } catch(e) { console.warn('Firebase push failed, using local only:', e); }
+  }
+
+  // Always save locally so pledge page sees it immediately
+  saveOrderLocal(orderData);
+  // Reload from localStorage as single source of truth
+  window._orders = getOrdersLocal();
+  updateStats();
+
+  toast('Order placed! 🍔');
+
+  // Send emails without blocking or crashing
+  if (typeof sendOrderEmails === 'function') {
+    try { sendOrderEmails(orderData); } catch(e) { console.warn('Email error:', e); }
+  }
+
+  S.name = S.name; S.phone = S.phone||'';
+  S.category=''; S.location=''; S.section=''; S.cart=[];
+  window.S = S;
+
+  document.querySelectorAll('#pledge-selector input[type=checkbox]').forEach(function(cb) {
+    cb.checked = cb.value==='Any Pledge';
+    cb.closest('label').style.borderColor = cb.checked?'#F97316':'#e5e5e5';
+    cb.closest('label').style.background = cb.checked?'#fff7ed':'#fff';
+  });
+  btn.disabled=false; btn.textContent='Place Order';
+  showOnly('step-category'); renderBC();
+}
+window.submitOrder = submitOrder;
+
+function togglePledge(el) {
+  const labels = document.querySelectorAll('#pledge-selector label');
+  if (el.value === 'Any Pledge') {
+    // if Any Pledge checked, uncheck all others
+    if (el.checked) {
+      document.querySelectorAll('#pledge-selector input[type=checkbox]').forEach(cb => {
+        if (cb.value !== 'Any Pledge') { cb.checked = false; cb.closest('label').style.borderColor = '#e5e5e5'; cb.closest('label').style.background = '#fff'; }
+      });
+    }
+  } else {
+    // if specific pledge checked, uncheck Any Pledge
+    if (el.checked) {
+      const anyEl = document.querySelector('#pledge-selector input[value="Any Pledge"]');
+      if (anyEl) { anyEl.checked = false; anyEl.closest('label').style.borderColor = '#e5e5e5'; anyEl.closest('label').style.background = '#fff'; }
+    }
+  }
+  el.closest('label').style.borderColor = el.checked ? '#F97316' : '#e5e5e5';
+  el.closest('label').style.background = el.checked ? '#fff7ed' : '#fff';
+  // ensure at least one is checked
+  const anyChecked = [...document.querySelectorAll('#pledge-selector input[type=checkbox]')].some(cb => cb.checked);
+  if (!anyChecked) { el.checked = true; el.closest('label').style.borderColor = '#F97316'; el.closest('label').style.background = '#fff7ed'; }
+}
+window.togglePledge = togglePledge;
+
+function getSelectedPledges() {
+  return [...document.querySelectorAll('#pledge-selector input[type=checkbox]:checked')].map(cb => cb.value);
+}
+function filterOrders(f,el) {
+  curFilter=f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); renderOrders();
+}
+window.filterOrders = filterOrders;
+
+function updateStats() {
+  const o=window._orders||[];
+  document.getElementById('s-pending').textContent=o.filter(x=>x.status==='pending').length;
+  document.getElementById('s-claimed').textContent=o.filter(x=>x.status==='claimed').length;
+  document.getElementById('s-done').textContent=o.filter(x=>x.status==='done').length;
+}
+function renderOrders() {
+  const all=window._orders||[];
+  const filtered=curFilter==='all'?all:all.filter(o=>o.status===curFilter);
+  const list=document.getElementById('orders-list');
+  if (!filtered.length) { list.innerHTML='<div class="empty">No orders here yet.</div>'; return; }
+  const PLEDGES = ['Niket Barot','Alexander Genkov','Clayton Green','Silas Kim','Ayush Patel','Chris Patel','Jai Wadhwani','Tina Wang','Thomas Yu'];
+  list.innerHTML=filtered.map(o=>{
+    const pills=(o.items||[]).map(i=>`<span class="pill">${i.qty}× ${i.desc}</span>`).join('');
+    let ts=''; try{ ts=new Date(o.createdAt.seconds?o.createdAt.seconds*1000:o.createdAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }catch(e){}
+    const assigned=(o.assignedTo||[]).join(', ')||'Any Pledge';
+    const borderColor=o.status==='done'?'#22c55e':o.status==='claimed'?'#3b82f6':'#F97316';
+    const badgeText={pending:'⏳ Pending',claimed:'🔄 In Progress',done:'✅ Done'}[o.status]||o.status;
+    let actions='';
+    if(userRole==='pledge'){
+      if(o.status==='pending'){
+        const opts=PLEDGES.map(p=>`<option value="${p}">${p}</option>`).join('');
+        actions=`<select id="claimer-${o.id}" style="padding:5px 10px;border-radius:8px;border:1px solid #e5e5e5;font-size:12px;font-family:inherit;background:#fff;margin-right:6px;">${opts}</select><button class="action-btn orange" onclick="claimOrder('${o.id}')">Claim</button>`;
+      } else if(o.status==='claimed'){
+        actions=`<button class="action-btn green" onclick="markDone('${o.id}')">Mark Done ✓</button><span style="font-size:12px;color:#555;padding:0 6px;">by <strong>${o.completedBy||'pledge'}</strong></span>`;
+      } else {
+        actions=`<span style="font-size:12px;color:#16a34a;font-weight:600;">✅ Completed by ${o.completedBy||'pledge'}</span>`;
+      }
+    } else {
+      if(o.status==='claimed') actions=`<span style="font-size:12px;color:#1d4ed8;">🔄 Being handled by <strong>${o.completedBy||'a pledge'}</strong></span>`;
+      else if(o.status==='done') actions=`<span style="font-size:12px;color:#16a34a;font-weight:600;">✅ Completed by ${o.completedBy||'pledge'}</span>`;
+    }
+    return `<div class="order-card" style="border-left:3px solid ${borderColor};">
+      <div class="order-card-top">
+        <div>
+          <div class="order-name">${o.name} <span style="font-weight:400;color:#999;font-size:13px;">— ${o.hall}</span></div>
+          <div class="order-meta">${ts}${ts?' · ':''}Pickup: ${o.pickup}${o.phone?` · 📱 ${o.phone}`:''}</div>
+          <div class="order-meta" style="margin-top:2px;color:#666;">👤 ${assigned}</div>
+        </div>
+        <span class="badge ${o.status}">${badgeText}</span>
+      </div>
+      <div class="pills">${pills}</div>
+      ${o.notes?`<div style="font-size:12px;color:#999;font-style:italic;margin-bottom:10px;padding:8px 10px;background:#fafafa;border-radius:8px;border-left:3px solid #e5e5e5;">"${o.notes}"</div>`:''}
+      ${actions?`<div class="order-actions" style="flex-wrap:wrap;gap:6px;">${actions}</div>`:''}
+    </div>`;
+  }).join('');
+}
+window.renderOrders=renderOrders;
+
+async function claimOrder(id) {
+  const sel = document.getElementById('claimer-'+id);
+  const name = sel ? sel.value : 'pledge';
+  try {
+    let saved = false;
+    if (window._updateDoc && window._doc && window._db) {
+      try { await window._updateDoc(window._doc(window._db,'orders',id),{status:'claimed',completedBy:name}); saved=true; }
+      catch(e) { console.warn('Firebase update failed:', e); }
+    }
+    if (!saved) { updateOrderLocal(id, {status:'claimed',completedBy:name}); }
+    updateStats(); renderOrders();
+  } catch(e) { toast('Error updating.'); console.error(e); }
+}
+window.claimOrder=claimOrder;
+
+async function markDone(id) {
+  try {
+    let saved = false;
+    if (window._updateDoc && window._doc && window._db) {
+      try { await window._updateDoc(window._doc(window._db,'orders',id),{status:'done'}); saved=true; }
+      catch(e) { console.warn('Firebase update failed:', e); }
+    }
+    if (!saved) { updateOrderLocal(id, {status:'done'}); }
+    updateStats(); renderOrders();
+  } catch(e) { toast('Error updating.'); console.error(e); }
+}
+window.markDone=markDone;
+
+async function updateStatus(id,status) {
+  try {
+    let saved = false;
+    if (window._updateDoc && window._doc && window._db) {
+      try { await window._updateDoc(window._doc(window._db,'orders',id),{status}); saved=true; }
+      catch(e) { console.warn('Firebase update failed:', e); }
+    }
+    if (!saved) { updateOrderLocal(id, {status}); }
+    updateStats(); renderOrders();
+  } catch(e) { toast('Error updating.'); console.error(e); }
+}
+window.updateStatus=updateStatus;
+
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+window.toast=toast;
+
+document.addEventListener('DOMContentLoaded', function() {
+  window._orders = getOrdersLocal();
+  updateStats();
+  showOnly('step-name'); renderBC();
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// 🔥 PASTE YOUR FIREBASE REALTIME DATABASE URL HERE (one line!)
+// Firebase Console → Build → Realtime Database → copy the URL
+// It looks like: https://your-project-default-rtdb.firebaseio.com
+// ════════════════════════════════════════════════════════════════
+const DB_URL = "PASTE_YOUR_DATABASE_URL_HERE";
+
+// ═══════════════════════════════════════════════════════════════
+// 📧 EMAILJS CONFIG — sign up free at emailjs.com
+// ════════════════════════════════════════════════════════════════
+const EMAILJS_PUBLIC_KEY  = "ECP2wfaAzfkfmLk2b";
+const EMAILJS_SERVICE_ID  = "service_u3vlivp";
+const EMAILJS_TEMPLATE_ID = "vg30thc";
+
+// ── Pledge email addresses ─────────────────────────────────────
+const PLEDGE_EMAILS = {
+  "Niket Barot":      "nikbarot0624@gmail.com",
+  "Alexander Genkov": "alexgenk2007@gmail.com",
+  "Clayton Green":    "ctgrn16@gmail.com",
+  "Silas Kim":        "seelaskim@gmail.com",
+  "Ayush Patel":      "ayush.patel9806@gmail.com",
+  "Chris Patel":      "chrispatel501@gmail.com",
+  "Jai Wadhwani":     "jaiwadhwani3285@gmail.com",
+  "Tina Wang":        "tinanawang@gmail.com",
+  "Thomas Yu":        "thomasjyu1@gmail.com"
+};
+// ════════════════════════════════════════════════════════════════
+
+const DB_READY = DB_URL && !DB_URL.includes("PASTE_YOUR");
+const EMAIL_READY = EMAILJS_PUBLIC_KEY && !EMAILJS_PUBLIC_KEY.includes("PASTE_YOUR");
+
+// ── Init EmailJS ───────────────────────────────────────────────
+if (EMAIL_READY) {
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+}
+
+// ── Send order notification emails ────────────────────────────
+async function sendOrderEmails(orderData) {
+  if (!EMAIL_READY) { console.log('EmailJS not configured — skipping emails'); return; }
+
+  const assignedTo = orderData.assignedTo || ['Any Pledge'];
+  const isAnyPledge = assignedTo.includes('Any Pledge');
+
+  // Build list of recipients
+  const recipients = isAnyPledge
+    ? Object.entries(PLEDGE_EMAILS)
+    : assignedTo.map(function(name) { return [name, PLEDGE_EMAILS[name]]; }).filter(function(e){ return e[1] && !e[1].includes('PASTE_'); });
+
+  if (recipients.length === 0) return;
+
+  const itemsList = (orderData.items || []).map(function(i){ return '• ' + i.qty + '× ' + i.desc; }).join('\n');
+  const assignedText = isAnyPledge ? 'All Pledges' : assignedTo.join(', ');
+
+  // Send one at a time with small delay to avoid rate limiting
+  let sent = 0;
+  for (let i = 0; i < recipients.length; i++) {
+    const name = recipients[i][0];
+    const email = recipients[i][1];
+    if (!email || email.includes('PASTE_')) continue;
+    // Try up to 3 times
+    let success = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          to_name:        name,
+          to_email:       email,
+          brother_name:   orderData.name,
+          brother_phone:  orderData.phone || 'N/A',
+          location:       orderData.hall,
+          items:          itemsList,
+          pickup_time:    orderData.pickup,
+          notes:          orderData.notes || 'None',
+          assigned_to:    assignedText
+        });
+        sent++;
+        success = true;
+        break;
+      } catch(err) {
+        console.warn('Email attempt '+(attempt+1)+' failed for '+name+':', err);
+        // Wait longer before retrying
+        await new Promise(function(r){ setTimeout(r, 1000 * (attempt + 1)); });
+      }
+    }
+    if (!success) console.warn('All attempts failed for ' + name);
+    // Delay between different recipients — EmailJS free plan rate limits ~1/sec
+    if (i < recipients.length - 1) await new Promise(function(r){ setTimeout(r, 1200); });
+  }
+  console.log('Emails sent to ' + sent + '/' + recipients.length + ' pledge(s)');
+}
+
+// ── Firebase REST helpers ──────────────────────────────────────
+async function dbGet(path) {
+  const r = await fetch(DB_URL + path + ".json");
+  return r.ok ? r.json() : null;
+}
+async function dbSet(path, data) {
+  await fetch(DB_URL + path + ".json", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
+async function dbPush(path, data) {
+  const r = await fetch(DB_URL + path + ".json", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  const j = await r.json();
+  return j.name; // Firebase-generated ID
+}
+async function dbPatch(path, data) {
+  await fetch(DB_URL + path + ".json", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
+
+// ── Sync: load all orders from Firebase ───────────────────────
+async function syncFromFirebase() {
+  if (!DB_READY) return;
+  try {
+    const data = await dbGet("/orders");
+    if (data) {
+      const orders = Object.entries(data).map(function(e) {
+        return Object.assign({ id: e[0] }, e[1]);
+      }).sort(function(a,b){ return new Date(b.createdAt||0) - new Date(a.createdAt||0); });
+      window._orders = orders;
+      updateStats();
+      if (document.getElementById('view-history').classList.contains('active')) renderOrders();
+    }
+  } catch(e) { console.warn("Firebase sync failed:", e); }
+}
+
+// ── Poll Firebase every 5 seconds for new orders ───────────────
+setInterval(syncFromFirebase, 5000);
+
+// ── Initial load ───────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  syncFromFirebase();
+});
+</script>
+</body>
+</html>
